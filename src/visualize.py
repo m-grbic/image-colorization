@@ -18,7 +18,7 @@ def visualize_temperature_change(model, test_ds, indices,  temperatures = (1, .7
     fig, axes = plt.subplots(len(indices), len(temperatures), figsize=(12, 6))
 
     for it, t in enumerate(temperatures):
-        image_colorizer = ImageColorizer(model, t)
+        image_colorizer = ImageColorizer(model=model, approach=config.model.approach, t=t)
         for i, idx in enumerate(indices):
             x, l, _ = test_ds[idx]
             ab_components = image_colorizer(x)
@@ -44,6 +44,7 @@ def main():
 
     test_ds = VisualDataset(test_df)
 
+    # Load model
     state_dict = load_best_state_dict(config.experiment_name)
     if config.model.approach == "classification":
         model = ImageColorizerClassificator(**config.model.get_init_model_dict())
@@ -51,7 +52,8 @@ def main():
         model = ImageColorizerRegressor(**config.model.get_init_model_dict())
     model.load_state_dict(state_dict=state_dict)
 
-    image_colorizer = ImageColorizer(model, config.temperature)
+    # Create colorizer
+    image_colorizer = ImageColorizer(model=model, approach=config.model.approach, t=config.temperature)
 
     indices = config.indices or random.sample(test_df.index.tolist(), k=config.num_samples)
 
@@ -61,7 +63,6 @@ def main():
         x, l, image_rgb = test_ds[idx]
 
         ab_components = image_colorizer(x)
-
         reconstructed_rgb_image = image_colorizer.reconstruct_image(l, ab_components)
 
         plot_save_path = os.path.join(
