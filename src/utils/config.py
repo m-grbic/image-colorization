@@ -6,15 +6,28 @@ from pathlib import Path
 from .paths import get_train_config_path, get_eval_config_path, get_train_config_output_path, get_experiment_name, get_visualize_config_path
 
 
-class TrainConfig(BaseModel):
-    batch_size: int
+class ModelConfig(BaseModel):
     upsampling_method: Literal["up_conv", "conv_up", "deconv"]
     backbone: Literal["resnet", "resnext", "vit"]
+    pretrained: bool = True
+    freeze_backbone: bool = False
+    approach: Literal['classification', 'regression'] = 'classification'
+
+    def get_init_model_dict(self):
+        return {
+            "backbone_name": self.backbone,
+            "pretrained": self.pretrained,
+            "freeze_backbone": self.freeze_backbone,
+            "upsampling_method": self.upsampling_method
+        }
+
+
+class TrainConfig(BaseModel):
     rebalancing: bool
     experiment_name: str
     learning_rate: float
-    pretrained: bool = True
-    freeze_backbone: bool = False
+    model: ModelConfig
+    batch_size: int
     lambda_loss: float = 0.5
     num_workers: int = 10
     max_num_epoch: int = 1000
@@ -22,16 +35,17 @@ class TrainConfig(BaseModel):
     lr_scheduler_step: int = 3
     early_stopping_patience: int = 5
     start_epoch: int = 0
-    approach: Literal['classification', 'regression'] = 'classification'
 
 
 class EvalConfig(BaseModel):
+    model: ModelConfig
     batch_size: int
     experiment_name: str
     num_workers: int = 10
 
 
 class VisualizeConfig(BaseModel):
+    model: ModelConfig
     experiment_name: str
     temperature: float
     anealing_temperatures: Union[Tuple[float], List[float]] =  (1, .77, .58, .38, .29, .14, 0)
@@ -54,15 +68,24 @@ def load_train_config() -> TrainConfig:
     return config
 
 
+def extract_model_config_from_train_outpt_config(experiment_name: str) -> dict:
+    """Extract model config from output train config."""
+    train_config_path = get_train_config_output_path(experiment_name)
+    train_config_dict = load_config(train_config_path)
+    return train_config_dict['model']
+
+
 def load_eval_config() -> EvalConfig:
     config_path = get_eval_config_path()
     config_dict = load_config(config_path)
+    config_dict['model'] = extract_model_config_from_train_outpt_config(config_dict['experiment_name'])
     return EvalConfig(**config_dict)
 
 
 def load_visualize_config() -> VisualizeConfig:
     config_path = get_visualize_config_path()
     config_dict = load_config(config_path)
+    config_dict['model'] = extract_model_config_from_train_outpt_config(config_dict['experiment_name'])
     return VisualizeConfig(**config_dict)
 
 

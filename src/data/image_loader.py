@@ -44,7 +44,7 @@ def get_output_train_tensor(image_lab: np.ndarray, soft_encoder: SoftEncoder) ->
 def get_regression_output_train_tensor(image_lab: np.ndarray) -> torch.Tensor:
     image_lab = cv2.resize(image_lab, (Z_SIZE, Z_SIZE), interpolation=cv2.INTER_AREA)
     ab = image_lab[:, :, 1:].astype(int) / 255.0  # normalize values
-    return torch.from_numpy(ab).permute(0, 1, 2)
+    return torch.from_numpy(ab).permute(2, 0, 1)
 
 
 def get_output_eval_tensor(image_lab: np.ndarray, soft_encoder: SoftEncoder) -> torch.Tensor:

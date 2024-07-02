@@ -1,3 +1,3 @@
 from .image_colorizer_classificator import ImageColorizerClassificator
 from .image_colorizer_regressor import ImageColorizerRegressor
-from .utils import save_best_model, save_last_model, load_best_model, load_last_model
+from .utils import save_best_model, save_last_model, load_best_state_dict, load_last_state_dict

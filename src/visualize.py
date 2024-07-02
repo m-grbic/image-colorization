@@ -7,7 +7,7 @@ import numpy as np
 import random
 import torch
 from data import VisualDataset, load_metadata
-from models import load_best_model, load_last_model
+from models import load_best_state_dict, ImageColorizerClassificator, ImageColorizerRegressor
 from colorizer import ImageColorizer, save_comparison_plot
 from utils import load_visualize_config, get_plots_save_path
 from pathlib import Path
@@ -44,7 +44,13 @@ def main():
 
     test_ds = VisualDataset(test_df)
 
-    model = load_best_model(config.experiment_name)
+    state_dict = load_best_state_dict(config.experiment_name)
+    if config.model.approach == "classification":
+        model = ImageColorizerClassificator(**config.model.get_init_model_dict())
+    else:
+        model = ImageColorizerRegressor(**config.model.get_init_model_dict())
+    model.load_state_dict(state_dict=state_dict)
+
     image_colorizer = ImageColorizer(model, config.temperature)
 
     indices = config.indices or random.sample(test_df.index.tolist(), k=config.num_samples)

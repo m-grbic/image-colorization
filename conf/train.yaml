@@ -1,9 +1,11 @@
 experiment_name: "resnext_deconv_head_only"
 # Model
-backbone: "resnext"
-upsampling_method: "deconv"
-pretrained: True
-freeze_backbone: True
+model:
+  backbone: "resnext"
+  upsampling_method: "deconv"
+  pretrained: True
+  freeze_backbone: True
+  approach: "classification"
 # Tech
 max_num_epoch: 1000
 batch_size: 64

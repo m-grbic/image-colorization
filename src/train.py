@@ -10,8 +10,8 @@ from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from data import create_dataloader, TrainDataset, load_metadata, SubsetRandomSampler
-from models import ImageColorizerClassificator, ImageColorizerRegressor, save_last_model, save_best_model, load_last_model
+from data import create_dataloader, TrainDataset, TrainRegressionDataset, load_metadata, SubsetRandomSampler
+from models import ImageColorizerClassificator, ImageColorizerRegressor, save_last_model, save_best_model, load_last_state_dict
 from loss import MultinomialCrossEntropyLoss, L2Loss
 from utils import load_train_config, get_experiment_path
 
@@ -89,34 +89,27 @@ def main():
     del test_df
     gc.collect()
 
-    train_ds, valid_ds = TrainDataset(train_df), TrainDataset(valid_df)
+    if config.model.approach == 'classification':
+        model = ImageColorizerClassificator(**config.model.get_init_model_dict())
+        criterion = MultinomialCrossEntropyLoss(batch_size=config.batch_size, l=config.lambda_loss, use_weights=config.rebalancing)
+        train_ds, valid_ds = TrainDataset(train_df), TrainDataset(valid_df)
+    else:
+        model = ImageColorizerRegressor(**config.model.get_init_model_dict())
+        criterion = L2Loss()
+        train_ds, valid_ds = TrainRegressionDataset(train_df), TrainRegressionDataset(valid_df)
+    model.to(device)
 
+    # Prepare DataLoaders
     sampler = SubsetRandomSampler(train_df, subset_size=config.num_iterations_per_epoch)
 
     train_dl = create_dataloader(train_ds, sampler=sampler, batch_size=config.batch_size, shuffle=False, num_workers=config.num_workers)
     valid_dl = create_dataloader(valid_ds, batch_size=config.batch_size, shuffle=False, num_workers=config.num_workers)
 
+    # Load model weights
     if config.start_epoch > 0:
         print(f"Continuing training from epoch {config.start_epoch}")
-        model = load_last_model(config.experiment_name)
-    else:
-        if config.approach == 'classification':
-            model = ImageColorizerClassificator(
-                backbone_name=config.backbone,
-                pretrained=config.pretrained,
-                freeze_backbone=config.freeze_backbone,
-                upsampling_method=config.upsampling_method
-            )
-            criterion = MultinomialCrossEntropyLoss(batch_size=config.batch_size, l=config.lambda_loss, use_weights=config.rebalancing)
-        else:
-            model = ImageColorizerRegressor(
-                backbone_name=config.backbone,
-                pretrained=config.pretrained,
-                freeze_backbone=config.freeze_backbone,
-                upsampling_method=config.upsampling_method
-            )
-            criterion = L2Loss()
-    model.to(device)
+        state_dict = load_last_state_dict(config.experiment_name)
+        model.load_state_dict(state_dict=state_dict)
 
     optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=config.lr_scheduler_step, verbose=True)
