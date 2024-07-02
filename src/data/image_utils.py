@@ -44,21 +44,27 @@ class SoftEncoder:
 
     def __call__(self, ab: np.ndarray) -> torch.Tensor:
         """Apply soft encoding on ab components."""
-        ab = torch.from_numpy(ab).unsqueeze(-1)  # (64, 64, 2, 1)
+        # Convert ab to a torch tensor and add the required dimension
+        ab_tensor = torch.from_numpy(ab).unsqueeze(-1)  # Shape: (64, 64, 2, 1)
 
-        squared_diff = (self._quantized_pairs - ab) ** 2  # (64, 64, 2, 256)
-        squared_dist = squared_diff.sum(dim=2)  # (64, 64, 256)
+        squared_diff = (self._quantized_pairs - ab_tensor) ** 2  # Shape: (64, 64, 2, 256)
+        squared_dist = squared_diff.sum(dim=2)  # Shape: (64, 64, 256)
 
-        neighbours = squared_dist.argsort(dim=-1)[:, :, :K_NEAREST_NEIGHBOURS]  # (64, 64, 5)
+        # Use torch.topk to find the k nearest neighbours, which is more efficient than argsort
+        topk_values, neighbours = torch.topk(squared_dist, K_NEAREST_NEIGHBOURS, dim=-1, largest=False)  # Shapes: (64, 64, 5), (64, 64, 5)
 
-        gathered_values = torch.gather(squared_dist, 2, neighbours)  # (64, 64, 5)
-        processed_values = self._gaussian_kernel(gathered_values)  # (64, 64, 5)
+        # Apply the Gaussian kernel function to the gathered values
+        processed_values = self._gaussian_kernel(topk_values)  # Shape: (64, 64, 5)
 
-        result_tensor = torch.zeros_like(squared_dist)  # (64, 64, 256)
-        result_tensor.scatter_(2, neighbours, processed_values)  # (64, 64, 256)
-        result_tensor /= result_tensor.sum(dim=-1, keepdim=True)  # (64, 64, 256)
+        # Create the result tensor and scatter the processed values into it
+        result_tensor = torch.zeros_like(squared_dist)  # Shape: (64, 64, 256)
+        result_tensor.scatter_(2, neighbours, processed_values)  # Shape: (64, 64, 256)
 
-        return result_tensor.permute(2, 0, 1) # (256, 64, 64)
+        # Normalize the result tensor along the last dimension
+        result_tensor /= result_tensor.sum(dim=-1, keepdim=True)  # Shape: (64, 64, 256)
+
+        # Permute the result tensor to get the desired output shape
+        return result_tensor.permute(2, 0, 1)  # Shape: (256, 64, 64)
     
     def get_gt_class(self, ab: Union[np.ndarray, torch.Tensor]) -> torch.Tensor:
         if isinstance(ab, np.ndarray):
