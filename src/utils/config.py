@@ -18,6 +18,7 @@ class TrainConfig(BaseModel):
     lambda_loss: float = 0.5
     num_workers: int = 10
     max_num_epoch: int = 1000
+    num_iterations_per_epoch: int = 320_000
     lr_scheduler_step: int = 3
     early_stopping_patience: int = 5
     start_epoch: int = 0

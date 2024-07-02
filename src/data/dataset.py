@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset
 from torchvision import transforms
 import numpy as np
+import os
 
 from .image_utils import SoftEncoder
 from .image_loader import load_train_data, load_eval_data, load_visual_data
@@ -17,6 +18,12 @@ LUMINANCE_STD = np.sqrt(sum([coeff * (std ** 2) for coeff, std in zip(RGB2LUMINA
 class BaseDataset(Dataset):
     """Common dataset functionalities."""
 
+    _dataset_mapper = {
+        'train': 'data/ILSVRC/Data/CLS-LOC/train',
+        'val': 'data/ILSVRC/Data/CLS-LOC/val',
+        'test': 'data/ILSVRC/Data/CLS-LOC/test'
+    }
+
     def __init__(self, dataframe):
         """Constructor"""
         self._dataframe = dataframe
@@ -26,6 +33,12 @@ class BaseDataset(Dataset):
             transforms.Lambda(lambda x: x.repeat(3, 1, 1))
         ])
 
+    def _create_image_path(self, idx: int) -> str:
+        return os.path.join(
+            self._dataset_mapper[self._dataframe.at[idx, 'dataset']],
+            self._dataframe.at[idx, 'image_path']
+        )
+
     def __len__(self):
         return len(self._dataframe)
 
@@ -33,7 +46,7 @@ class BaseDataset(Dataset):
 class TrainDataset(BaseDataset):
 
     def __getitem__(self, idx):
-        image_path = self._dataframe.iloc[idx]['image_path']        
+        image_path = self._create_image_path(idx)       
         x, y = load_train_data(image_path, self._soft_encoder)
         x = self._transforms(x)
         return x, y
@@ -42,7 +55,7 @@ class TrainDataset(BaseDataset):
 class EvalDataset(BaseDataset):
 
     def __getitem__(self, idx):
-        image_path = self._dataframe.iloc[idx]['image_path']
+        image_path = self._create_image_path(idx)   
         x, y = load_eval_data(image_path, self._soft_encoder)
         x = self._transforms(x)
         return x, y
@@ -51,7 +64,7 @@ class EvalDataset(BaseDataset):
 class VisualDataset(BaseDataset):
 
     def __getitem__(self, idx):
-        image_path = self._dataframe.iloc[idx]['image_path']
+        image_path = self._create_image_path(idx)   
         x, l, image_rgb = load_visual_data(image_path)
         x = self._transforms(x)
         return x, l, image_rgb

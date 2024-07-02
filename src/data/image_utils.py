@@ -44,7 +44,7 @@ class SoftEncoder:
 
     def __call__(self, ab: np.ndarray) -> torch.Tensor:
         """Apply soft encoding on ab components."""
-        ab = torch.Tensor(ab).unsqueeze(-1)  # (64, 64, 2, 1)
+        ab = torch.from_numpy(ab).unsqueeze(-1)  # (64, 64, 2, 1)
 
         squared_diff = (self._quantized_pairs - ab) ** 2  # (64, 64, 2, 256)
         squared_dist = squared_diff.sum(dim=2)  # (64, 64, 256)

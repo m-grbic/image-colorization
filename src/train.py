@@ -1,5 +1,6 @@
 import sys
 import os
+import gc
 sys.path.insert(0, os.path.join(os.getcwd(), "src"))
 
 import torch
@@ -62,13 +63,14 @@ def train_loop(train_dl, val_dl, model, criterion, optimizer, scheduler) -> None
             
         save_last_model(model, config.experiment_name)
         scheduler.step(val_loss)
+        gc.collect()
 
 
 def val_loop(val_dl, model, criterion, epoch):
     model.eval()
     running_loss = 0.0
     with torch.no_grad():  # Disable gradient calculation
-        for idx, (x, y) in enumerate(tqdm(val_dl)):
+        for x, y in tqdm(val_dl):
             x, y = x.to(device), y.to(device)
 
             y_hat = model(x)
@@ -82,11 +84,14 @@ def val_loop(val_dl, model, criterion, epoch):
 
 
 def main():
-    train_df, valid_df, _ = load_metadata()
+    train_df, valid_df, test_df = load_metadata()
+
+    del test_df
+    gc.collect()
 
     train_ds, valid_ds = TrainDataset(train_df), TrainDataset(valid_df)
 
-    sampler = SubsetRandomSampler(train_df)
+    sampler = SubsetRandomSampler(train_df, subset_size=config.num_iterations_per_epoch)
 
     train_dl = create_dataloader(train_ds, sampler=sampler, batch_size=config.batch_size, shuffle=False, num_workers=config.num_workers)
     valid_dl = create_dataloader(valid_ds, batch_size=config.batch_size, shuffle=False, num_workers=config.num_workers)

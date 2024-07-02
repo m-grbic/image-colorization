@@ -1,13 +1,14 @@
-experiment_name: "resnext_deconv_head_only_test"
+experiment_name: "resnext_deconv_head_only"
 # Model
 backbone: "resnext"
 upsampling_method: "deconv"
 pretrained: True
 freeze_backbone: True
 # Tech
-max_num_epochs: 1000
-batch_size: 1
+max_num_epoch: 1000
+batch_size: 64
 num_workers: 10
+num_iterations_per_epoch: 320_000
 # Schedulers
 start_epoch: 0
 learning_rate: 1e-4
