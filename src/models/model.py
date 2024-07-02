@@ -34,17 +34,17 @@ class ImageColorizerSE(nn.Module):
             #  Upsampling + Convolution | 11,230,491 trainable parameters
             self.upsample_7_to_14 = nn.Sequential(
                 nn.Upsample(size=(14, 14), mode='bilinear', align_corners=False),
-                nn.Conv2d(2048, 512, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(2048, 512, kernel_size=3, stride=1, padding=1, bias=False),
                 nn.BatchNorm2d(512),
                 nn.ReLU(inplace=True)
             )
             self.upsample_14_to_64 = nn.Sequential(
                 nn.Upsample(size=(32, 32), mode='bilinear', align_corners=False),
-                nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1, bias=False),
                 nn.BatchNorm2d(256),
                 nn.ReLU(inplace=True),
                 nn.Upsample(size=(64, 64), mode='bilinear', align_corners=False),
-                nn.Conv2d(256, 265, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(256, 265, kernel_size=3, stride=1, padding=1, bias=False),
                 nn.BatchNorm2d(265),
                 nn.ReLU(inplace=True)
             )
@@ -52,17 +52,17 @@ class ImageColorizerSE(nn.Module):
             print("Upsampling method is convolution + upsampling")
             # Convolution + Upsampling | 3,847,963 trainable parameters
             self.upsample_7_to_14 = nn.Sequential(
-                nn.Conv2d(2048, 1024, kernel_size=1, stride=1, padding=1),
+                nn.Conv2d(2048, 1024, kernel_size=1, stride=1, padding=1, bias=False),
                 nn.BatchNorm2d(1024),
                 nn.ReLU(inplace=True),
                 nn.Upsample(size=(14, 14), mode='bilinear', align_corners=False)
             )
             self.upsample_14_to_64 = nn.Sequential(
-                nn.Conv2d(1024, 512, kernel_size=1, stride=1, padding=1),
+                nn.Conv2d(1024, 512, kernel_size=1, stride=1, padding=1, bias=False),
                 nn.BatchNorm2d(512),
                 nn.ReLU(inplace=True),
                 nn.Upsample(size=(32, 32), mode='bilinear', align_corners=False),
-                nn.Conv2d(512, 265, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(512, 265, kernel_size=3, stride=1, padding=1, bias=False),
                 nn.BatchNorm2d(265),
                 nn.ReLU(inplace=True),
                 nn.Upsample(size=(64, 64), mode='bilinear', align_corners=False)
@@ -77,7 +77,8 @@ class ImageColorizerSE(nn.Module):
                     kernel_size=4, 
                     stride=2, 
                     padding=1, 
-                    output_padding=0
+                    output_padding=0,
+                    bias=False
                 ),
                 nn.BatchNorm2d(512),
                 nn.ReLU(inplace=True)
@@ -90,7 +91,8 @@ class ImageColorizerSE(nn.Module):
                     stride=2, 
                     padding=1, 
                     dilation=2,
-                    output_padding=1
+                    output_padding=1,
+                    bias=False
                 ),
                 nn.BatchNorm2d(256),
                 nn.ReLU(inplace=True),
@@ -100,7 +102,8 @@ class ImageColorizerSE(nn.Module):
                     kernel_size=4, 
                     stride=2, 
                     padding=1, 
-                    output_padding=0
+                    output_padding=0,
+                    bias=False
                 ),
                 nn.BatchNorm2d(265),
                 nn.ReLU(inplace=True)
