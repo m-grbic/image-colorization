@@ -1,7 +1,7 @@
 from torchvision import models
 from torchsummary import summary
 
-from model import ImageColorizerSE
+from image_colorizer_classificator import ImageColorizerClassificator
 
-model = ImageColorizerSE(backbone_name="resnext", freeze_backbone=True)
+model = ImageColorizerClassificator(backbone_name="resnext", freeze_backbone=True)
 summary(model, (3, 224, 224))

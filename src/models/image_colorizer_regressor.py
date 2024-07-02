@@ -4,7 +4,7 @@ import torchvision.models as models
 import timm
 
 
-class ImageColorizerSE(nn.Module):
+class ImageColorizerRegressor(nn.Module):
 
     def __init__(self, backbone_name: str, pretrained: bool = True, freeze_backbone: bool = False, upsampling_method: str = 'deconv'):
         super().__init__()
@@ -26,7 +26,7 @@ class ImageColorizerSE(nn.Module):
         print(f"Number od trainable parameters:", sum(p.numel() for p in self.backbone.parameters() if p.requires_grad))
 
         if self.backbone_name == 'vit':
-            self.vit_to_conv = nn.Conv2d(768, 1024, kernel_size=1)  # ViT has an output of 768 channels, convert to 512
+            self.vit_to_conv = nn.Conv2d(768, 512, kernel_size=1)  # ViT has an output of 768 channels, convert to 512
 
         # Upsampling layers
         if upsampling_method == 'up_conv':
@@ -40,30 +40,30 @@ class ImageColorizerSE(nn.Module):
             )
             self.upsample_14_to_64 = nn.Sequential(
                 nn.Upsample(size=(32, 32), mode='bilinear', align_corners=False),
-                nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1, bias=False),
-                nn.BatchNorm2d(256),
+                nn.Conv2d(512, 64, kernel_size=3, stride=1, padding=1, bias=False),
+                nn.BatchNorm2d(64),
                 nn.ReLU(inplace=True),
                 nn.Upsample(size=(64, 64), mode='bilinear', align_corners=False),
-                nn.Conv2d(256, 265, kernel_size=3, stride=1, padding=1, bias=False),
-                nn.BatchNorm2d(265),
+                nn.Conv2d(64, 2, kernel_size=3, stride=1, padding=1, bias=False),
+                nn.BatchNorm2d(2),
                 nn.ReLU(inplace=True)
             )
         elif upsampling_method == 'conv_up':
             print("Upsampling method is convolution + upsampling")
             # Convolution + Upsampling | 3,847,963 trainable parameters
             self.upsample_7_to_14 = nn.Sequential(
-                nn.Conv2d(2048, 1024, kernel_size=1, stride=1, padding=1, bias=False),
+                nn.Conv2d(2048, 512, kernel_size=1, stride=1, padding=1, bias=False),
                 nn.BatchNorm2d(1024),
                 nn.ReLU(inplace=True),
                 nn.Upsample(size=(14, 14), mode='bilinear', align_corners=False)
             )
             self.upsample_14_to_64 = nn.Sequential(
-                nn.Conv2d(1024, 512, kernel_size=1, stride=1, padding=1, bias=False),
+                nn.Conv2d(512, 64, kernel_size=1, stride=1, padding=1, bias=False),
                 nn.BatchNorm2d(512),
                 nn.ReLU(inplace=True),
                 nn.Upsample(size=(32, 32), mode='bilinear', align_corners=False),
-                nn.Conv2d(512, 265, kernel_size=3, stride=1, padding=1, bias=False),
-                nn.BatchNorm2d(265),
+                nn.Conv2d(64, 2, kernel_size=3, stride=1, padding=1, bias=False),
+                nn.BatchNorm2d(2),
                 nn.ReLU(inplace=True),
                 nn.Upsample(size=(64, 64), mode='bilinear', align_corners=False)
             )
@@ -86,7 +86,7 @@ class ImageColorizerSE(nn.Module):
             self.upsample_14_to_64 = nn.Sequential(
                 nn.ConvTranspose2d(
                     in_channels=512, 
-                    out_channels=256, 
+                    out_channels=64, 
                     kernel_size=4, 
                     stride=2, 
                     padding=1, 
@@ -94,18 +94,18 @@ class ImageColorizerSE(nn.Module):
                     output_padding=1,
                     bias=False
                 ),
-                nn.BatchNorm2d(256),
+                nn.BatchNorm2d(64),
                 nn.ReLU(inplace=True),
                 nn.ConvTranspose2d(
-                    in_channels=256, 
-                    out_channels=265, 
+                    in_channels=64, 
+                    out_channels=2, 
                     kernel_size=4, 
                     stride=2, 
                     padding=1, 
                     output_padding=0,
                     bias=False
                 ),
-                nn.BatchNorm2d(265),
+                nn.BatchNorm2d(2),
                 nn.ReLU(inplace=True)
             )
         else:
@@ -117,7 +117,7 @@ class ImageColorizerSE(nn.Module):
             B, N, C = x.shape  # (batch_size, 196, 768)
             H = W = int(N ** 0.5)  # H = W = 14 for 196 patches
             x = x.permute(0, 2, 1).view(B, C, H, W)  # (batch_size, 768, 14, 14)
-            x = self.vit_to_conv(x)  # (batch_size, 265, 14, 14)
+            x = self.vit_to_conv(x)  # (batch_size, 512, 14, 14)
         else:
             x = self.backbone(x)
 

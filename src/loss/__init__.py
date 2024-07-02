@@ -1,2 +1,2 @@
-from .loss import MultinomialCrossEntropyLoss
+from .loss import MultinomialCrossEntropyLoss, L2Loss
 

@@ -22,6 +22,7 @@ class TrainConfig(BaseModel):
     lr_scheduler_step: int = 3
     early_stopping_patience: int = 5
     start_epoch: int = 0
+    approach: Literal['classification', 'regression'] = 'classification'
 
 
 class EvalConfig(BaseModel):

@@ -11,8 +11,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from data import create_dataloader, TrainDataset, load_metadata, SubsetRandomSampler
-from models import ImageColorizerSE, save_last_model, save_best_model, load_last_model
-from loss import MultinomialCrossEntropyLoss
+from models import ImageColorizerClassificator, ImageColorizerRegressor, save_last_model, save_best_model, load_last_model
+from loss import MultinomialCrossEntropyLoss, L2Loss
 from utils import load_train_config, get_experiment_path
 
 
@@ -100,15 +100,24 @@ def main():
         print(f"Continuing training from epoch {config.start_epoch}")
         model = load_last_model(config.experiment_name)
     else:
-        model = ImageColorizerSE(
-            backbone_name=config.backbone,
-            pretrained=config.pretrained,
-            freeze_backbone=config.freeze_backbone,
-            upsampling_method=config.upsampling_method
-        )
+        if config.approach == 'classification':
+            model = ImageColorizerClassificator(
+                backbone_name=config.backbone,
+                pretrained=config.pretrained,
+                freeze_backbone=config.freeze_backbone,
+                upsampling_method=config.upsampling_method
+            )
+            criterion = MultinomialCrossEntropyLoss(batch_size=config.batch_size, l=config.lambda_loss, use_weights=config.rebalancing)
+        else:
+            model = ImageColorizerRegressor(
+                backbone_name=config.backbone,
+                pretrained=config.pretrained,
+                freeze_backbone=config.freeze_backbone,
+                upsampling_method=config.upsampling_method
+            )
+            criterion = L2Loss()
     model.to(device)
 
-    criterion = MultinomialCrossEntropyLoss(batch_size=config.batch_size, l=config.lambda_loss, use_weights=config.rebalancing)
     optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=config.lr_scheduler_step, verbose=True)
 

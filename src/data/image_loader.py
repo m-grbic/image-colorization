@@ -41,6 +41,12 @@ def get_output_train_tensor(image_lab: np.ndarray, soft_encoder: SoftEncoder) ->
     return soft_encoder(ab)
 
 
+def get_regression_output_train_tensor(image_lab: np.ndarray) -> torch.Tensor:
+    image_lab = cv2.resize(image_lab, (Z_SIZE, Z_SIZE), interpolation=cv2.INTER_AREA)
+    ab = image_lab[:, :, 1:].astype(int) / 255.0  # normalize values
+    return torch.from_numpy(ab).permute(0, 1, 2)
+
+
 def get_output_eval_tensor(image_lab: np.ndarray, soft_encoder: SoftEncoder) -> torch.Tensor:
     image_lab = cv2.resize(image_lab, (Z_SIZE, Z_SIZE), interpolation=cv2.INTER_AREA)
     ab = get_ab_components(image_lab)
@@ -70,11 +76,21 @@ def load_lab_image(image_path: str) -> np.ndarray:
 
   
 def load_train_data(image_path: str, soft_encoder: SoftEncoder) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Prepares data from training."""
+    """Prepares data for training classification model."""
     image_lab = load_lab_image(image_path)
 
     x = get_input_tensor(image_lab)
     y = get_output_train_tensor(image_lab, soft_encoder)
+
+    return x, y
+
+
+def load_regression_train_data(image_path: str) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Prepares data for training regression model."""
+    image_lab = load_lab_image(image_path)
+
+    x = get_input_tensor(image_lab)
+    y = get_regression_output_train_tensor(image_lab)
 
     return x, y
 

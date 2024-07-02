@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 from .image_utils import SoftEncoder
-from .image_loader import load_train_data, load_eval_data, load_visual_data
+from .image_loader import load_train_data, load_eval_data, load_visual_data, load_regression_train_data
 
 
 IMAEGNET_MEAN = [0.485, 0.456, 0.406]
@@ -48,6 +48,15 @@ class TrainDataset(BaseDataset):
     def __getitem__(self, idx):
         image_path = self._create_image_path(idx)       
         x, y = load_train_data(image_path, self._soft_encoder)
+        x = self._transforms(x)
+        return x, y
+
+
+class TrainRegressionDataset(BaseDataset):
+
+    def __getitem__(self, idx):
+        image_path = self._create_image_path(idx)       
+        x, y = load_regression_train_data(image_path)
         x = self._transforms(x)
         return x, y
 

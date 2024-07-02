@@ -1,7 +1,7 @@
 import os
 import torch
 
-from models import ImageColorizerSE
+from models import ImageColorizerClassificator
 from utils import get_last_model_path, get_best_model_path
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

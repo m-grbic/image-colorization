@@ -55,3 +55,13 @@ class MultinomialCrossEntropyLoss(nn.Module):
 
         loss = - torch.mean(cross_entropy) # scalar
         return loss
+
+
+class L2Loss(nn.Module):
+    
+    def __init__(self) -> None:
+        super().__init__()
+
+    def forward(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        squared_diff = torch.sum((prediction - target) ** 2, dim=1)  # (BS, 64, 64)
+        return torch.mean(squared_diff)
