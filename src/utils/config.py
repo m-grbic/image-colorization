@@ -38,6 +38,7 @@ class TrainConfig(BaseModel):
     scheduler: SchedulerConfig
     learning_rate: float
     batch_size: int
+    sigma_encoding: float = 5.0
     lambda_loss: float = 0.5
     num_workers: int = 10
     max_num_epoch: int = 1000

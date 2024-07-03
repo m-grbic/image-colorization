@@ -35,7 +35,7 @@ class GaussianKernel:
 
 class SoftEncoder:
 
-    def __init__(self, sigma: int = 5) -> None:
+    def __init__(self, sigma: float = 5.0) -> None:
         """Constructor."""
         quantized_pairs = list(load_ab_pair_counts())
         self._num_classes = len(quantized_pairs)

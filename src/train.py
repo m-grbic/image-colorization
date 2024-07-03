@@ -92,11 +92,13 @@ def main():
     if config.model.approach == 'classification':
         model = ImageColorizerClassificator(**config.model.get_init_model_dict())
         criterion = MultinomialCrossEntropyLoss(batch_size=config.batch_size, l=config.lambda_loss, use_weights=config.rebalancing)
-        train_ds, valid_ds = TrainDataset(train_df), TrainDataset(valid_df)
+        train_ds = TrainDataset(train_df, config.sigma_encoding)
+        valid_ds = TrainDataset(valid_df, config.sigma_encoding)
     else:
         model = ImageColorizerRegressor(**config.model.get_init_model_dict())
         criterion = L2Loss()
-        train_ds, valid_ds = TrainRegressionDataset(train_df), TrainRegressionDataset(valid_df)
+        train_ds = TrainRegressionDataset(train_df, config.sigma_encoding)
+        valid_ds = TrainRegressionDataset(valid_df, config.sigma_encoding)
     model.to(device)
 
     # Prepare DataLoaders

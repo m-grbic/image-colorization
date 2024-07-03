@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset
 from torchvision import transforms
 import numpy as np
+import pandas as pd
 import os
 
 from .image_utils import SoftEncoder
@@ -24,10 +25,10 @@ class BaseDataset(Dataset):
         'test': 'data/ILSVRC/Data/CLS-LOC/test'
     }
 
-    def __init__(self, dataframe):
+    def __init__(self, dataframe: pd.DataFrame, sigma: float = 0.5):
         """Constructor"""
         self._dataframe = dataframe
-        self._soft_encoder = SoftEncoder()
+        self._soft_encoder = SoftEncoder(sigma=sigma)
         self._transforms = transforms.Compose([
             transforms.Normalize(mean=LUMINANCE_MEAN, std=LUMINANCE_STD),
             transforms.Lambda(lambda x: x.repeat(3, 1, 1))
