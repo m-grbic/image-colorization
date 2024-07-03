@@ -38,7 +38,7 @@ class ImageColorizer:
             ab_predictions = F.interpolate(ab_predictions, size=(224, 224), mode='bicubic', align_corners=False)
             ab_predictions *= 255
         
-        ab_predictions = torch.clamp(ab_predictions * 255, min=0, max=255)
+        ab_predictions = torch.clamp(ab_predictions, min=0, max=255)
         
         if is_unsqueezed:
             ab_predictions = ab_predictions.squeeze(0)
