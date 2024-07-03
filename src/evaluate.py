@@ -30,8 +30,6 @@ def test_loop(test_dl: torch.utils.data.DataLoader, image_colorizer: ImageColori
 def main():
     _, _, test_df = load_metadata()
 
-    test_df = test_df.iloc[:1000, :]
-
     test_ds = EvalDataset(test_df)
 
     test_dl = create_dataloader(test_ds, batch_size=config.batch_size, shuffle=False, num_workers=config.num_workers)
