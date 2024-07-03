@@ -1,4 +1,4 @@
-experiment_name: "resnext_deconv_head_only_lr=1e-3"
+experiment_name: "resnext_deconv"
 temperature: 0.38
 # indices: [0]
 num_samples: 2

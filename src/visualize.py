@@ -21,8 +21,7 @@ def visualize_temperature_change(model, test_ds, indices,  temperatures = (1, .7
         image_colorizer = ImageColorizer(model=model, approach=config.model.approach, t=t)
         for i, idx in enumerate(indices):
             x, l, _ = test_ds[idx]
-            ab_components = image_colorizer(x)
-            reconstructed_rgb_image = image_colorizer.reconstruct_image(l, ab_components)
+            reconstructed_rgb_image = image_colorizer.reconstruct_image(x=x, l=l)
 
             axes[i, it].imshow(reconstructed_rgb_image)
             if i == 0:
@@ -41,7 +40,6 @@ def visualize_temperature_change(model, test_ds, indices,  temperatures = (1, .7
 def main():
 
     _, _, test_df = load_metadata()
-
     test_ds = VisualDataset(test_df)
 
     # Load model
@@ -51,19 +49,20 @@ def main():
     else:
         model = ImageColorizerRegressor(**config.model.get_init_model_dict())
     model.load_state_dict(state_dict=state_dict)
+    model.eval().to(device)
 
-    # Create colorizer
     image_colorizer = ImageColorizer(model=model, approach=config.model.approach, t=config.temperature)
 
+    # Extract image indices to visualize
     indices = config.indices or random.sample(test_df.index.tolist(), k=config.num_samples)
 
+    # Visualize temperature change
     visualize_temperature_change(model, test_ds, random.sample(indices, k=2))
 
+    # Create comparison plots
     for idx in indices:
         x, l, image_rgb = test_ds[idx]
-
-        ab_components = image_colorizer(x)
-        reconstructed_rgb_image = image_colorizer.reconstruct_image(l, ab_components)
+        reconstructed_rgb_image = image_colorizer.reconstruct_image(x=x, l=l)
 
         plot_save_path = os.path.join(
             get_plots_save_path(config.experiment_name),
@@ -75,6 +74,5 @@ def main():
 if __name__ == "__main__":
     config = load_visualize_config()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
     main()
     

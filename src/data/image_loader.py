@@ -47,10 +47,11 @@ def get_regression_output_train_tensor(image_lab: np.ndarray) -> torch.Tensor:
     return torch.from_numpy(ab).permute(2, 0, 1)
 
 
-def get_output_eval_tensor(image_lab: np.ndarray, soft_encoder: SoftEncoder) -> torch.Tensor:
+def get_output_eval_tensor(image_lab: np.ndarray) -> torch.Tensor:
+    """Returns ab components in shape (2, 64, 64) with pixels in range (0, 255)"""
     image_lab = cv2.resize(image_lab, (Z_SIZE, Z_SIZE), interpolation=cv2.INTER_AREA)
     ab = get_ab_components(image_lab)
-    return soft_encoder.get_one_hot_encoded(ab)
+    return torch.from_numpy(ab).permute(2, 0, 1)
 
 
 def load_image(image_path: str) -> np.ndarray:
@@ -95,12 +96,12 @@ def load_regression_train_data(image_path: str) -> Tuple[torch.Tensor, torch.Ten
     return x, y
 
 
-def load_eval_data(image_path: str, soft_encoder: SoftEncoder) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Returns image prepared for model input and one hot encoded classes."""
+def load_eval_data(image_path: str) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Returns image prepared for model input and ab tensor."""
     image_lab = load_lab_image(image_path)
 
     x = get_input_tensor(image_lab)
-    y = get_output_eval_tensor(image_lab, soft_encoder)
+    y = get_output_eval_tensor(image_lab)
 
     return x, y
 

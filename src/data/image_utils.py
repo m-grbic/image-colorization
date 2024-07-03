@@ -40,6 +40,8 @@ class SoftEncoder:
         quantized_pairs = list(load_ab_pair_counts())
         self._num_classes = len(quantized_pairs)
         self._quantized_pairs = torch.Tensor(quantized_pairs).T.view(1, 1, 2, -1).expand(Z_SIZE, Z_SIZE, 2, -1)  # (64, 64, 2, 256)
+        self._a_values = self._quantized_pairs[:, :, :1, :].permute(2, 3, 0, 1)
+        self._b_values = self._quantized_pairs[:, :, 1:, :].permute(2, 3, 0, 1)
         self._gaussian_kernel = GaussianKernel(sigma)
 
     def __call__(self, ab: np.ndarray) -> torch.Tensor:
@@ -66,15 +68,12 @@ class SoftEncoder:
         # Permute the result tensor to get the desired output shape
         return result_tensor.permute(2, 0, 1)  # Shape: (256, 64, 64)
     
-    def get_gt_class(self, ab: Union[np.ndarray, torch.Tensor]) -> torch.Tensor:
-        if isinstance(ab, np.ndarray):
-            ab = torch.from_numpy(ab).unsqueeze(-1)  # 64, 64, 2, 1
-        else:
-            ab = ab.permute(1, 2, 0).unsqueeze(0)
-        ab_diff = torch.sum((self._quantized_pairs - ab) ** 2, dim=2) # (64, 64, 256)
-        return torch.argmin(ab_diff, dim=-1)  # (64, 64)
-
-    def get_one_hot_encoded(self, ab: Union[np.ndarray, torch.Tensor]) -> torch.Tensor:
-        gt_class = self.get_gt_class(ab)  # (64, 64)
-        one_hot_encoded_tensor = torch.nn.functional.one_hot(gt_class, num_classes=self._num_classes)  # (64, 64, 256)
-        return one_hot_encoded_tensor.permute(2, 0, 1)  # Shape is (256, 64, 64)
+    def get_classes(self, ab: torch.Tensor):
+        assert ab.min() >= -128 and ab.max() <= 128
+        assert ab.dim() == 4 and ab.shape[1:] == torch.Size([2, 64, 64])
+        a = ab[:, :1, :, :]  # Shape: (BS, 1, 64, 64)
+        b = ab[:, 1:, :, :]  # Shape: (BS, 1, 64, 64)
+        dist = (a - self._a_values) ** 2 + (b - self._b_values) ** 2  # Shape: (BS, 265, 64, 64)
+        classes = torch.argmin(dist, dim=1)
+        assert classes.dim() == 3 and classes.shape[0] == ab.shape[0] and classes.shape[1:] == torch.Size([64, 64])
+        return classes.flatten()  # (BS, 64, 64) -> flatten

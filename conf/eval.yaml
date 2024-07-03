@@ -1,3 +1,5 @@
-batch_size: 64
-num_workers: 10
-experiment_name: "resnext_deconv_head_only"
+batch_size: 1
+num_workers: 0
+temperature: 1.0
+experiment_name: "resnext_deconv"
+metrics: ["accuracy", "weighted_accuracy", "error"]

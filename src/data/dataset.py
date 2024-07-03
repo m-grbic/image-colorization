@@ -65,7 +65,7 @@ class EvalDataset(BaseDataset):
 
     def __getitem__(self, idx):
         image_path = self._create_image_path(idx)   
-        x, y = load_eval_data(image_path, self._soft_encoder)
+        x, y = load_eval_data(image_path)
         x = self._transforms(x)
         return x, y
 

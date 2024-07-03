@@ -1,8 +1,8 @@
-experiment_name: "resnext_deconv_lr=1e-3"
+experiment_name: "resnext_up_conv"
 # Model
 model:
   backbone: "resnext"
-  upsampling_method: "deconv"
+  upsampling_method: "up_conv"
   pretrained: True
   freeze_backbone: False
   approach: "classification"
@@ -16,7 +16,7 @@ start_epoch: 0
 learning_rate: 1e-3
 early_stopping_patience: 5
 scheduler:
-  threshold: 0.99
+  threshold: 0.995
   threshold_mode: 'rel'
   patience: 3
 # Loss

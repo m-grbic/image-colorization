@@ -1,58 +1,82 @@
 import torch
-from ..data.image_utils import load_ab_pair_counts
+from typing import List
+import numpy as np
+import pandas as pd
 
-# Example tensor with dimensions [64, 1, 64, 64]
-predictions = torch.randn(64, 1, 64, 64)  # Replace this with your actual tensor
-targets = torch.randint(0, 2, (64, 1, 64, 64))  # Replace with your ground truth tensor
-
-# Flatten the tensors
-flattened_predictions = predictions.view(-1)
-flattened_targets = targets.view(-1)
+from data.image_utils import SoftEncoder, load_ab_pair_counts
 
 
-def compute_map(preds: torch.Tensor, targets: torch.Tensor):
-    sorted_indices = torch.argsort(preds, descending=True)
-    sorted_targets = targets[sorted_indices]
-    tp = (sorted_targets == 1).float()
-    fp = (sorted_targets == 0).float()
-    tp_cumsum = torch.cumsum(tp, dim=0)
-    fp_cumsum = torch.cumsum(fp, dim=0)
-    precision = tp_cumsum / (tp_cumsum + fp_cumsum)
-    recall = tp_cumsum / tp.sum()
-    precision = torch.cat([torch.tensor([0.]), precision])
-    recall = torch.cat([torch.tensor([0.]), recall])
-    map_score = torch.sum((recall[1:] - recall[:-1]) * precision[1:])
-    return map_score
+class Accuracy:
+
+    def __init__(self) -> None:
+        """Constructor."""
+        self._soft_encoder = SoftEncoder()
+    
+    def __call__(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Any:
+        predicted_classes = self._soft_encoder.get_classes(preds)
+        gt_classes = self._soft_encoder.get_classes(targets)
+        return torch.sum(predicted_classes == gt_classes) / predicted_classes.numel()
+    
+
+class WeightedAccuracy:
+
+    def __init__(self) -> None:
+        """Constructor."""
+        self._soft_encoder = SoftEncoder()
+        self._weights = torch.Tensor([1 / count for count in load_ab_pair_counts().values()])
+    
+    def __call__(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Any:
+        predicted_classes = self._soft_encoder.get_classes(preds)
+        gt_classes = self._soft_encoder.get_classes(targets)
+
+        gt_classes_ = gt_classes.view(-1, 1)  # N x 1
+        weights = self._weights.view(1, -1).expand(gt_classes_.shape[0], -1)  # N x 265
+        weights = torch.gather(weights, 1, gt_classes_).flatten()  # N x 1 -> N
+
+        return torch.sum(weights * (predicted_classes == gt_classes)) / predicted_classes.numel()
 
 
-def compute_auc(preds: torch.Tensor, targets: torch.Tensor):
-    sorted_indices = torch.argsort(preds, descending=True)
-    sorted_targets = targets[sorted_indices]
-    tp = (sorted_targets == 1).float()
-    fp = (sorted_targets == 0).float()
-    tp_cumsum = torch.cumsum(tp, dim=0)
-    fp_cumsum = torch.cumsum(fp, dim=0)
-    tpr = tp_cumsum / tp.sum()
-    fpr = fp_cumsum / fp.sum()
-    tpr = torch.cat([torch.tensor([0.]), tpr])
-    fpr = torch.cat([torch.tensor([0.]), fpr])
-    auc_score = torch.trapz(tpr, fpr)
-    return auc_score
+class EuclidianDistanceError:
 
-
-def compute_top1_accuracy(preds: torch.Tensor, targets: torch.Tensor):
-    probas = torch.sigmoid(preds)
-    predicted_class = (probas > 0.5).long()
-    correct = (predicted_class == targets).sum().float()
-    accuracy = correct / targets.numel()
-    return accuracy
+    def __init__(self) -> None:
+        """Constructor."""
+        self._soft_encoder = SoftEncoder()
+    
+    def __call__(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Any:
+        return torch.mean(torch.sqrt(torch.sum((preds - targets) ** 2, dim=1)))
 
 
 class MetricClaculator:
 
-    def __init__(self) -> None:
+    def __init__(self, metrics: List[str]) -> None:
         """Constructor."""
-        self._class_weights = list(load_ab_pair_counts().values())
+        self._metrics_func_mapper = self._initialize_metrics(metrics=metrics)
+        self._metrics_data = {metric_name: [] for metric_name in metrics}
+
+        self._soft_encoder = SoftEncoder()
+        self._weights = torch.Tensor([1 / count for count in load_ab_pair_counts().values()])
+
+    def _initialize_metrics(self, metrics: List[str]) -> dict:
+        metrics_func_mapper = {}
+        for metric in metrics:
+            if metric == 'accuracy':
+                metrics_func_mapper['accuracy'] = Accuracy()
+            elif metric == 'weighted_accuracy':
+                metrics_func_mapper['weighted_accuracy'] = WeightedAccuracy()
+            elif metric == 'error':
+                metrics_func_mapper['error'] = EuclidianDistanceError()
+            else:
+                print(f"[ERROR] Metric {metric} is not recognized")
+        return metrics_func_mapper
+    
+    def reset(self) -> None:
+        self._metrics_data = {metric_name: [] for metric_name in self._metrics_data}
 
     def __call__(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Any:
-        pass
+        for metric_name, metric_func in self._metrics_func_mapper.items():
+            self._metrics_data[metric_name].append(metric_func(preds, targets))
+
+    def summary(self) -> pd.DataFrame:
+        return pd.DataFrame.from_dict({
+            metric_name: [np.mean(metric_values)] for metric_name, metric_values in self._metrics_data.items()
+        })
