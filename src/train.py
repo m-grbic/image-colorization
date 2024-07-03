@@ -111,8 +111,9 @@ def main():
         state_dict = load_last_state_dict(config.experiment_name)
         model.load_state_dict(state_dict=state_dict)
 
+    # Create scheduler
     optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=config.lr_scheduler_step, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer=optimizer, **config.scheduler.model_dump())
 
     train_loop(train_dl=train_dl, val_dl=valid_dl, model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler)
 

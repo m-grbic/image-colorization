@@ -20,19 +20,28 @@ class ModelConfig(BaseModel):
             "freeze_backbone": self.freeze_backbone,
             "upsampling_method": self.upsampling_method
         }
+    
+
+class SchedulerConfig(BaseModel):
+    patience: int = 3
+    threshold: float = 0.99
+    threshold_mode: Literal['abs', 'rel'] = 'rel'
+    factor: float = 0.1
+    mode: Literal['min', 'max'] = 'min'
+    verbose: bool = True
 
 
 class TrainConfig(BaseModel):
     rebalancing: bool
     experiment_name: str
-    learning_rate: float
     model: ModelConfig
+    scheduler: SchedulerConfig
+    learning_rate: float
     batch_size: int
     lambda_loss: float = 0.5
     num_workers: int = 10
     max_num_epoch: int = 1000
     num_iterations_per_epoch: int = 320_000
-    lr_scheduler_step: int = 3
     early_stopping_patience: int = 5
     start_epoch: int = 0
 
