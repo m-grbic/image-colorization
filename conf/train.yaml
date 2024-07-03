@@ -1,21 +1,24 @@
-experiment_name: "resnext_deconv_head_only"
+experiment_name: "resnext_deconv_lr=1e-3"
 # Model
 model:
   backbone: "resnext"
   upsampling_method: "deconv"
   pretrained: True
-  freeze_backbone: True
+  freeze_backbone: False
   approach: "classification"
 # Tech
 max_num_epoch: 1000
 batch_size: 64
-num_workers: 10
+num_workers: 8
 num_iterations_per_epoch: 320_000
 # Schedulers
 start_epoch: 0
-learning_rate: 1e-4
-lr_scheduler_step: 3
+learning_rate: 1e-3
 early_stopping_patience: 5
+scheduler:
+  threshold: 0.99
+  threshold_mode: 'rel'
+  patience: 3
 # Loss
 lambda_loss: 0.5
 rebalancing: True
