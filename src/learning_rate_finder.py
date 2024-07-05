@@ -20,7 +20,7 @@ from pathlib import Path
 def find_learning_rate(model, criterion, optimizer, train_dl):
 
     lr_finder = LRFinder(model, optimizer, criterion, device="cuda")
-    lr_finder.range_test(train_dl, end_lr=2, start_lr=1e-6, num_iter=100)
+    lr_finder.range_test(train_dl, start_lr=1e-5, end_lr=2, num_iter=500)
     ax, _ = lr_finder.plot()
     lr_finder.reset()
     output_dir_path = os.path.join("experiments", config.experiment_name)
