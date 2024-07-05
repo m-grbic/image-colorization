@@ -1,5 +1,5 @@
 batch_size: 1
 num_workers: 0
-temperature: 0.38
-experiment_name: "resnext_up_conv"
-metrics: ["accuracy", "weighted_accuracy", "error"]
+temperatures: [0, 0.2, 0.4, 0.6]
+experiment_name: "resnext_up_conv_lr_1e-3"
+metrics: ["raw_accuracy", "accuracy", "weighted_accuracy", "auc", "weighted_auc", "error"]
