@@ -23,10 +23,9 @@ class ImageColorizerClassificator(nn.Module):
             print("Freezing backbone parameters.")
             for param in self.backbone.parameters():
                 param.requires_grad = False
-        print(f"Number od trainable parameters:", sum(p.numel() for p in self.backbone.parameters() if p.requires_grad))
-
+        
         if self.backbone_name == 'vit':
-            self.vit_to_conv = nn.Conv2d(768, 1024, kernel_size=1)  # ViT has an output of 768 channels, convert to 512
+            self.vit_to_conv = nn.Conv2d(768, 512, kernel_size=1)  # ViT has an output of 768 channels, convert to 512
 
         # Upsampling layers
         if upsampling_method == 'up_conv':
