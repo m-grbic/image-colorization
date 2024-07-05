@@ -51,8 +51,8 @@ class EvalConfig(BaseModel):
     model: ModelConfig
     batch_size: int
     experiment_name: str
-    temperature: float
-    metrics: List[Literal["accuracy", "weighted_accuracy", "error"]]
+    temperatures: List[float]
+    metrics: List[Literal["raw_accuracy", "accuracy", "weighted_accuracy", "auc", "weighted_auc", "error"]]
     num_workers: int = 10
 
 

@@ -68,12 +68,12 @@ class SoftEncoder:
         # Permute the result tensor to get the desired output shape
         return result_tensor.permute(2, 0, 1)  # Shape: (256, 64, 64)
     
-    def get_classes(self, ab: torch.Tensor):
+    def get_classes(self, ab: torch.Tensor) -> torch.Tensor:
         assert ab.min() >= -128 and ab.max() <= 128
         assert ab.dim() == 4 and ab.shape[1:] == torch.Size([2, 64, 64])
         a = ab[:, :1, :, :]  # Shape: (BS, 1, 64, 64)
         b = ab[:, 1:, :, :]  # Shape: (BS, 1, 64, 64)
         dist = (a - self._a_values) ** 2 + (b - self._b_values) ** 2  # Shape: (BS, 265, 64, 64)
-        classes = torch.argmin(dist, dim=1)
-        assert classes.dim() == 3 and classes.shape[0] == ab.shape[0] and classes.shape[1:] == torch.Size([64, 64])
-        return classes.flatten()  # (BS, 64, 64) -> flatten
+        classes = torch.argmin(dist, dim=1, keepdim=True)
+        assert classes.shape[0] == ab.shape[0] and classes.shape[1:] == torch.Size([1, 64, 64])
+        return classes  # (BS, 1, 64, 64)

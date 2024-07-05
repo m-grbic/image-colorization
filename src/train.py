@@ -6,6 +6,8 @@ sys.path.insert(0, os.path.join(os.getcwd(), "src"))
 import torch
 import torch.optim as optim
 from tqdm import tqdm
+import numpy as np
+import random
 
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -14,6 +16,13 @@ from data import create_dataloader, TrainDataset, TrainRegressionDataset, load_m
 from models import ImageColorizerClassificator, ImageColorizerRegressor, save_last_model, save_best_model, load_last_state_dict
 from loss import MultinomialCrossEntropyLoss, L2Loss
 from utils import load_train_config, get_experiment_path
+
+
+def set_random_seeds():
+    print("Setting random seeds")
+    np.random.seed(42)
+    random.seed(42)
+    torch.manual_seed(42)
 
 
 def train_loop(train_dl, val_dl, model, criterion, optimizer, scheduler) -> None:
@@ -126,5 +135,6 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     summary_writer = SummaryWriter(get_experiment_path(config.experiment_name))
     print(f"Using {device}")
+    set_random_seeds()
     main()
     summary_writer.close()

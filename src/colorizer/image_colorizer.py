@@ -21,6 +21,9 @@ class ImageColorizer:
         self._b_values = self._classes[:, 1].view(1, -1, 1, 1).expand(1, -1, Z_SIZE, Z_SIZE)
         self._anealed_mean = AnealedMean(a_dist=self._a_values, b_dist=self._b_values, t=self._t)
 
+    def set_temperature(self, t: float):
+        self._t = t
+
     def __call__(self, x: torch.Tensor, resize: bool = False):
         """Predict ab components in (0, 255) range from input image."""
         is_unsqueezed = False
